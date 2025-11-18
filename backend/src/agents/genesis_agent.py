@@ -196,7 +196,12 @@ DEMONSTRATE YOUR INTELLIGENCE:
 
         try:
             print("📡 Sending request to Gemini...")
-            response = self.model.generate_content(prompt)
+            # Use JSON mode to ensure valid JSON output
+            generation_config = {
+                "temperature": 0.7,
+                "response_mime_type": "application/json"
+            }
+            response = self.model.generate_content(prompt, generation_config=generation_config)
 
             # Extract and parse the response
             # Handle different response formats
@@ -289,7 +294,12 @@ Provide a JSON response with:
 """
 
         try:
-            response = self.model.generate_content(prompt)
+            # Use JSON mode to ensure valid JSON output
+            generation_config = {
+                "temperature": 0.5,
+                "response_mime_type": "application/json"
+            }
+            response = self.model.generate_content(prompt, generation_config=generation_config)
 
             # Extract response text using the same logic as design_agent_swarm
             try:
