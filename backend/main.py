@@ -33,8 +33,9 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "http://localhost:3001",
+        "https://genesis-auditor.vercel.app",  # Production domain
+        "https://genesis-auditor-bggj5hgzr-jayanth-muthinas-projects.vercel.app",
         "https://genesis-auditor-68vtpxy5j-jayanth-muthinas-projects.vercel.app",
-        "https://*.vercel.app",  # Allow all Vercel preview deployments
     ],
     allow_credentials=True,
     allow_methods=["*"],
