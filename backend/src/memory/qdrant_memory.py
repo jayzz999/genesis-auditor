@@ -186,13 +186,23 @@ class GenesisMemory:
             ]
         )
 
-        # Search Qdrant
-        results = self.client.search(
-            collection_name=self.collection_name,
-            query_vector=query_vector,
-            query_filter=search_filter,
-            limit=top_k * 2  # Get extra results to filter
-        )
+        # Search Qdrant (using query_points for newer qdrant-client versions)
+        try:
+            results = self.client.search(
+                collection_name=self.collection_name,
+                query_vector=query_vector,
+                query_filter=search_filter,
+                limit=top_k * 2  # Get extra results to filter
+            )
+        except AttributeError:
+            # Fallback for newer qdrant-client API
+            from qdrant_client.models import SearchRequest
+            results = self.client.query_points(
+                collection_name=self.collection_name,
+                query=query_vector,
+                query_filter=search_filter,
+                limit=top_k * 2
+            ).points
 
         # Filter by success rate and format
         relevant_attacks = []
