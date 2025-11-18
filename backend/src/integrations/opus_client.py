@@ -33,14 +33,14 @@ class OpusClient:
             workflow_id: Default workflow ID (or set OPUS_WORKFLOW_ID env var)
         """
         self.api_key = api_key or os.getenv('OPUS_API_KEY')
-        self.base_url = base_url or os.getenv('OPUS_BASE_URL', 'https://api.opus.com')
+        self.base_url = base_url or os.getenv('OPUS_BASE_URL', 'https://operator.opus.com')
         self.workflow_id = workflow_id or os.getenv('OPUS_WORKFLOW_ID')
 
         if not self.api_key:
             print("⚠️  Warning: OPUS_API_KEY not configured")
 
         self.headers = {
-            'Authorization': f'Bearer {self.api_key}',
+            'x-service-key': self.api_key,
             'Content-Type': 'application/json'
         }
 
@@ -68,50 +68,104 @@ class OpusClient:
             print(f"❌ Failed to get Opus workflow schema: {e}")
             raise
 
-    def initiate_job(
+    def _initiate_job(
         self,
-        input_data: Dict[str, Any],
-        workflow_id: Optional[str] = None,
-        job_metadata: Optional[Dict] = None
-    ) -> Dict:
+        event_type: str,
+        workflow_id: Optional[str] = None
+    ) -> str:
         """
-        Initiate an Opus workflow job
+        Step 1: Initiate an Opus job and get jobExecutionId
 
         Args:
-            input_data: Input data for the workflow (matches workflow input schema)
+            event_type: Type of event being triggered
             workflow_id: Workflow ID (uses default if not provided)
-            job_metadata: Optional metadata for job tracking
 
         Returns:
-            Job initiation response with job_id
+            Job execution ID for the execute step
         """
         wf_id = workflow_id or self.workflow_id
         if not wf_id:
             raise ValueError("workflow_id required")
 
-        url = f"{self.base_url}/jobs/initiate"
+        url = f"{self.base_url}/job/initiate"
 
         payload = {
-            "workflow_id": wf_id,
-            "input": input_data,
-            "metadata": job_metadata or {
-                "source": "genesis-auditor",
-                "timestamp": datetime.now().isoformat()
-            }
+            "workflowId": wf_id,
+            "title": f"Genesis Audit - {event_type}",
+            "description": f"Automated audit workflow triggered at {datetime.utcnow().isoformat()}"
         }
 
         try:
-            print(f"📤 Initiating Opus job for workflow: {wf_id}")
+            print(f"📤 Step 1: Initiating Opus job for workflow: {wf_id}")
             response = requests.post(url, json=payload, headers=self.headers, timeout=30)
             response.raise_for_status()
 
             result = response.json()
-            job_id = result.get('job_id')
-            print(f"✅ Opus job initiated: {job_id}")
+            job_execution_id = result.get('jobExecutionId')
+            print(f"✅ Job initiated with execution ID: {job_execution_id}")
+
+            return job_execution_id
+        except Exception as e:
+            print(f"❌ Failed to initiate Opus job: {e}")
+            raise
+
+    def _execute_job(
+        self,
+        job_execution_id: str,
+        event_type: str,
+        audit_data: Optional[Dict] = None,
+        alert_data: Optional[Dict] = None
+    ) -> Dict:
+        """
+        Step 2: Execute the Opus job with payload data
+
+        Args:
+            job_execution_id: Job execution ID from initiate step
+            event_type: Type of event
+            audit_data: Audit completion data (for audit_completed events)
+            alert_data: Alert data (for critical_vulnerability_alert events)
+
+        Returns:
+            Job execution response
+        """
+        url = f"{self.base_url}/job/execute"
+
+        # Build payload schema with typed values
+        payload_schema = {
+            "event_type": {
+                "value": event_type,
+                "type": "str"
+            }
+        }
+
+        if audit_data:
+            payload_schema["audit_data"] = {
+                "value": audit_data,
+                "type": "object"
+            }
+
+        if alert_data:
+            payload_schema["alert_data"] = {
+                "value": alert_data,
+                "type": "object"
+            }
+
+        payload = {
+            "jobExecutionId": job_execution_id,
+            "jobPayloadSchemaInstance": payload_schema
+        }
+
+        try:
+            print(f"📤 Step 2: Executing Opus job: {job_execution_id}")
+            response = requests.post(url, json=payload, headers=self.headers, timeout=30)
+            response.raise_for_status()
+
+            result = response.json()
+            print(f"✅ Opus job executed successfully")
 
             return result
         except Exception as e:
-            print(f"❌ Failed to initiate Opus job: {e}")
+            print(f"❌ Failed to execute Opus job: {e}")
             raise
 
     def get_job_status(self, job_id: str) -> Dict:
@@ -159,27 +213,27 @@ class OpusClient:
         Returns:
             Opus job response
         """
-        input_data = {
-            "event_type": "audit_completed",
-            "audit_data": {
-                "domain": domain,
-                "target_api": target_api_name,
-                "compliance_score": compliance_score,
-                "risk_level": risk_level,
-                "vulnerabilities_found": vulnerabilities_found,
-                "duration_seconds": duration_seconds,
-                "critical_vulnerabilities": critical_vulnerabilities or [],
-                "timestamp": datetime.now().isoformat()
-            }
+        event_type = "audit_completed"
+
+        audit_data = {
+            "domain": domain,
+            "target_api": target_api_name,
+            "compliance_score": compliance_score,
+            "risk_level": risk_level,
+            "vulnerabilities_found": vulnerabilities_found,
+            "duration_seconds": duration_seconds,
+            "critical_vulnerabilities": critical_vulnerabilities or [],
+            "timestamp": datetime.utcnow().isoformat()
         }
 
-        return self.initiate_job(
-            input_data=input_data,
-            job_metadata={
-                "event": "audit_completed",
-                "domain": domain,
-                "target": target_api_name
-            }
+        # Step 1: Initiate job
+        job_execution_id = self._initiate_job(event_type)
+
+        # Step 2: Execute job with audit data
+        return self._execute_job(
+            job_execution_id=job_execution_id,
+            event_type=event_type,
+            audit_data=audit_data
         )
 
     def trigger_critical_vulnerability_workflow(
@@ -199,26 +253,26 @@ class OpusClient:
         Returns:
             Opus job response
         """
-        input_data = {
-            "event_type": "critical_vulnerability_alert",
-            "alert_data": {
-                "domain": domain,
-                "target_api": target_api_name,
-                "critical_count": len(critical_vulnerabilities),
-                "vulnerabilities": critical_vulnerabilities,
-                "timestamp": datetime.now().isoformat(),
-                "severity": "CRITICAL",
-                "requires_immediate_action": True
-            }
+        event_type = "critical_vulnerability_alert"
+
+        alert_data = {
+            "domain": domain,
+            "target_api": target_api_name,
+            "critical_count": len(critical_vulnerabilities),
+            "vulnerabilities": critical_vulnerabilities,
+            "timestamp": datetime.utcnow().isoformat(),
+            "severity": "CRITICAL",
+            "requires_immediate_action": True
         }
 
-        return self.initiate_job(
-            input_data=input_data,
-            job_metadata={
-                "event": "critical_alert",
-                "priority": "P0",
-                "domain": domain
-            }
+        # Step 1: Initiate job
+        job_execution_id = self._initiate_job(event_type)
+
+        # Step 2: Execute job with alert data
+        return self._execute_job(
+            job_execution_id=job_execution_id,
+            event_type=event_type,
+            alert_data=alert_data
         )
 
 

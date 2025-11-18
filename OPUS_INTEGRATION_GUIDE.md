@@ -34,7 +34,7 @@ Add these to your Railway/environment:
 ```bash
 OPUS_API_KEY=your_opus_api_key_here
 OPUS_WORKFLOW_ID=wTriWWYYLBQC7k1a  # Your workflow ID
-OPUS_BASE_URL=https://api.opus.com  # Optional, uses default if not set
+OPUS_BASE_URL=https://operator.opus.com  # Optional, uses default if not set
 ```
 
 ### 3. Deploy
@@ -54,58 +54,83 @@ Genesis Auditor automatically triggers Opus workflows when:
 
 **1. Audit Completes Successfully**
 ```python
-# Sends to Opus Job Operator API
-POST /jobs/initiate
+# Step 1: Initiate job
+POST /job/initiate
+Headers: x-service-key: your_api_key
 {
-  "workflow_id": "wTriWWYYLBQC7k1a",
-  "input": {
-    "event_type": "audit_completed",
+  "workflowId": "wTriWWYYLBQC7k1a",
+  "title": "Genesis Audit - audit_completed",
+  "description": "Automated audit workflow triggered at 2025-01-19T12:34:56Z"
+}
+# Response: {"jobExecutionId": "abc123"}
+
+# Step 2: Execute job with payload
+POST /job/execute
+Headers: x-service-key: your_api_key
+{
+  "jobExecutionId": "abc123",
+  "jobPayloadSchemaInstance": {
+    "event_type": {
+      "value": "audit_completed",
+      "type": "str"
+    },
     "audit_data": {
-      "domain": "HIPAA",
-      "target_api": "Healthcare API",
-      "compliance_score": 78,
-      "risk_level": "MEDIUM",
-      "vulnerabilities_found": 5,
-      "duration_seconds": 145.3,
-      "critical_vulnerabilities": [],
-      "timestamp": "2025-01-19T12:34:56Z"
+      "value": {
+        "domain": "HIPAA",
+        "target_api": "Healthcare API",
+        "compliance_score": 78,
+        "risk_level": "MEDIUM",
+        "vulnerabilities_found": 5,
+        "duration_seconds": 145.3,
+        "critical_vulnerabilities": [],
+        "timestamp": "2025-01-19T12:34:56Z"
+      },
+      "type": "object"
     }
-  },
-  "metadata": {
-    "event": "audit_completed",
-    "domain": "HIPAA",
-    "target": "Healthcare API"
   }
 }
 ```
 
 **2. Critical Vulnerabilities Found**
 ```python
-# Separate urgent alert job
-POST /jobs/initiate
+# Step 1: Initiate job
+POST /job/initiate
+Headers: x-service-key: your_api_key
 {
-  "workflow_id": "wTriWWYYLBQC7k1a",
-  "input": {
-    "event_type": "critical_vulnerability_alert",
+  "workflowId": "wTriWWYYLBQC7k1a",
+  "title": "Genesis Audit - critical_vulnerability_alert",
+  "description": "Automated audit workflow triggered at 2025-01-19T12:34:56Z"
+}
+# Response: {"jobExecutionId": "xyz789"}
+
+# Step 2: Execute job with alert data
+POST /job/execute
+Headers: x-service-key: your_api_key
+{
+  "jobExecutionId": "xyz789",
+  "jobPayloadSchemaInstance": {
+    "event_type": {
+      "value": "critical_vulnerability_alert",
+      "type": "str"
+    },
     "alert_data": {
-      "domain": "HIPAA",
-      "target_api": "Healthcare API",
-      "critical_count": 2,
-      "vulnerabilities": [
-        {
-          "name": "SQL Injection",
-          "description": "...",
-          "severity": "CRITICAL"
-        }
-      ],
-      "timestamp": "2025-01-19T12:34:56Z",
-      "requires_immediate_action": true
+      "value": {
+        "domain": "HIPAA",
+        "target_api": "Healthcare API",
+        "critical_count": 2,
+        "vulnerabilities": [
+          {
+            "name": "SQL Injection",
+            "description": "...",
+            "severity": "CRITICAL"
+          }
+        ],
+        "timestamp": "2025-01-19T12:34:56Z",
+        "severity": "CRITICAL",
+        "requires_immediate_action": true
+      },
+      "type": "object"
     }
-  },
-  "metadata": {
-    "event": "critical_alert",
-    "priority": "P0",
-    "domain": "HIPAA"
   }
 }
 ```
