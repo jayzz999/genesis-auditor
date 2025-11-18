@@ -211,7 +211,7 @@ class OpusClient:
             critical_vulnerabilities: List of critical vulnerability names
 
         Returns:
-            Opus job response
+            Opus job response with job_id
         """
         event_type = "audit_completed"
 
@@ -230,11 +230,18 @@ class OpusClient:
         job_execution_id = self._initiate_job(event_type)
 
         # Step 2: Execute job with audit data
-        return self._execute_job(
+        execute_response = self._execute_job(
             job_execution_id=job_execution_id,
             event_type=event_type,
             audit_data=audit_data
         )
+
+        # Return response with job_id for tracking
+        return {
+            "job_id": job_execution_id,
+            "status": "initiated",
+            "response": execute_response
+        }
 
     def trigger_critical_vulnerability_workflow(
         self,
@@ -251,7 +258,7 @@ class OpusClient:
             critical_vulnerabilities: List of critical vulns with details
 
         Returns:
-            Opus job response
+            Opus job response with job_id
         """
         event_type = "critical_vulnerability_alert"
 
@@ -269,11 +276,18 @@ class OpusClient:
         job_execution_id = self._initiate_job(event_type)
 
         # Step 2: Execute job with alert data
-        return self._execute_job(
+        execute_response = self._execute_job(
             job_execution_id=job_execution_id,
             event_type=event_type,
             alert_data=alert_data
         )
+
+        # Return response with job_id for tracking
+        return {
+            "job_id": job_execution_id,
+            "status": "initiated",
+            "response": execute_response
+        }
 
 
 # Singleton instance
