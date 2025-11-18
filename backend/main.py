@@ -154,16 +154,13 @@ async def start_audit(request: AuditRequest):
             "results": None
         }
 
-        # Send initial update via WebSocket
-        await manager.send_update(audit_id, {
-            "type": "audit_started",
-            "audit_id": audit_id,
-            "domain": request.domain,
-            "target": request.target_api_name
-        })
+        # Run audit asynchronously in background
+        # Use asyncio.create_task with proper reference to keep task alive
+        task = asyncio.create_task(run_audit_async(audit_id, request))
+        # Store task reference to prevent garbage collection
+        active_audits[audit_id]["task"] = task
 
-        # Run audit asynchronously
-        asyncio.create_task(run_audit_async(audit_id, request))
+        print(f"✅ Background task created for audit {audit_id}")
 
         return {
             "audit_id": audit_id,
@@ -177,6 +174,10 @@ async def start_audit(request: AuditRequest):
 
 async def run_audit_async(audit_id: str, request: AuditRequest):
     """Run audit asynchronously with real-time updates"""
+    print(f"\n{'='*70}")
+    print(f"🎬 AUDIT ASYNC TASK STARTED for {audit_id}")
+    print(f"{'='*70}\n")
+
     try:
         # Send memory query update
         await manager.send_update(audit_id, {
@@ -184,6 +185,7 @@ async def run_audit_async(audit_id: str, request: AuditRequest):
             "phase": "memory_query",
             "message": "Querying memory for relevant past attacks..."
         })
+        print(f"📤 Sent memory_query update for {audit_id}")
 
         await asyncio.sleep(1)  # Simulate processing
 
