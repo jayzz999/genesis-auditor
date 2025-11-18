@@ -15,6 +15,7 @@ from agents.genesis_agent import GenesisAgent
 from memory.qdrant_memory import GenesisMemory
 from orchestrator.attack_executor import AttackExecutor
 from utils.report_generator import GenesisReportGenerator
+from integrations.webhook_manager import get_webhook_manager
 
 
 class GenesisOrchestrator:
@@ -37,6 +38,9 @@ class GenesisOrchestrator:
         print("📊 Report generator initializing...")
         self.report_generator = GenesisReportGenerator()
         self.audit_results = None
+
+        print("🔗 Webhook manager initializing...")
+        self.webhook_manager = get_webhook_manager()
 
         print("✅ Genesis Auditor ready")
         print("=" * 60)
@@ -63,6 +67,13 @@ class GenesisOrchestrator:
         print("=" * 70)
 
         audit_start_time = datetime.now()
+
+        # Trigger audit.started webhook
+        self.webhook_manager.trigger_webhook("audit.started", {
+            "domain": domain,
+            "target": target_api_name,
+            "timestamp": audit_start_time.isoformat()
+        })
 
         # Step 1: Design the agent swarm (with memory retrieval)
         print("\n📋 PHASE 1: AGENT SWARM DESIGN")
@@ -140,6 +151,30 @@ class GenesisOrchestrator:
         print("=" * 70)
 
         self._print_executive_summary()
+
+        # Trigger audit.completed webhook
+        self.webhook_manager.trigger_webhook("audit.completed", {
+            "domain": domain,
+            "target": target_api_name,
+            "compliance_score": stats['compliance_score'],
+            "risk_level": analysis.get('risk_level'),
+            "vulnerabilities_found": vulnerable_count,
+            "duration_seconds": duration,
+            "timestamp": audit_end_time.isoformat()
+        })
+
+        # Trigger critical vulnerability webhooks if needed
+        critical_vulns = [
+            r for r in attack_results
+            if r.get('result') == 'VULNERABLE' and r.get('severity') == 'CRITICAL'
+        ]
+        if critical_vulns:
+            self.webhook_manager.trigger_webhook("vulnerability.critical", {
+                "domain": domain,
+                "target": target_api_name,
+                "critical_count": len(critical_vulns),
+                "vulnerabilities": [v.get('attack') for v in critical_vulns]
+            })
 
         return self.audit_results
 

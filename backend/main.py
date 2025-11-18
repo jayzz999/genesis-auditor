@@ -20,6 +20,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from src.orchestrator.genesis_orchestrator import GenesisOrchestrator
 from src.memory.qdrant_memory import GenesisMemory
+from src.integrations.webhook_manager import get_webhook_manager
 
 app = FastAPI(
     title="Genesis Auditor API",
@@ -78,6 +79,12 @@ class AuditResponse(BaseModel):
     audit_id: str
     status: str
     message: str
+
+class WebhookConfig(BaseModel):
+    event_type: str
+    webhook_url: str
+    secret: Optional[str] = None
+    description: Optional[str] = None
 
 class DomainInfo(BaseModel):
     id: str
@@ -456,6 +463,97 @@ async def download_pdf(audit_id: str):
         media_type="application/pdf",
         filename=f"genesis_audit_{audit_id}.pdf"
     )
+
+# ==================== WEBHOOK INTEGRATION ENDPOINTS ====================
+
+@app.post("/api/webhooks/register")
+async def register_webhook(config: WebhookConfig):
+    """
+    Register a webhook for workflow automation (Opus, Zapier, Make.com, etc.)
+
+    Supported event types:
+    - audit.started: Triggered when an audit begins
+    - audit.completed: Triggered when audit finishes successfully
+    - audit.failed: Triggered when audit fails
+    - vulnerability.critical: Triggered when critical vulnerabilities found
+    - vulnerability.high: Triggered when high severity vulnerabilities found
+    """
+    webhook_manager = get_webhook_manager()
+
+    try:
+        webhook_manager.register_webhook(
+            event_type=config.event_type,
+            webhook_url=config.webhook_url,
+            secret=config.secret,
+            metadata={"description": config.description} if config.description else None
+        )
+
+        return {
+            "status": "success",
+            "message": f"Webhook registered for {config.event_type}",
+            "webhook_url": config.webhook_url
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/api/webhooks/events")
+async def get_webhook_events():
+    """Get list of available webhook event types"""
+    return {
+        "events": [
+            {
+                "type": "audit.started",
+                "description": "Triggered when a security audit begins",
+                "payload_example": {
+                    "domain": "HIPAA",
+                    "target": "Healthcare API",
+                    "timestamp": "2025-01-19T12:00:00"
+                }
+            },
+            {
+                "type": "audit.completed",
+                "description": "Triggered when an audit completes successfully",
+                "payload_example": {
+                    "domain": "HIPAA",
+                    "target": "Healthcare API",
+                    "compliance_score": 85,
+                    "risk_level": "MEDIUM",
+                    "vulnerabilities_found": 3,
+                    "duration_seconds": 120.5
+                }
+            },
+            {
+                "type": "audit.failed",
+                "description": "Triggered when an audit fails",
+                "payload_example": {
+                    "domain": "HIPAA",
+                    "target": "Healthcare API",
+                    "error": "Connection timeout"
+                }
+            },
+            {
+                "type": "vulnerability.critical",
+                "description": "Triggered when critical vulnerabilities are found",
+                "payload_example": {
+                    "domain": "HIPAA",
+                    "target": "Healthcare API",
+                    "critical_count": 2,
+                    "vulnerabilities": ["SQL Injection", "Broken Authentication"]
+                }
+            }
+        ]
+    }
+
+@app.get("/api/webhooks/stats")
+async def get_webhook_stats():
+    """Get statistics about registered webhooks"""
+    webhook_manager = get_webhook_manager()
+    stats = webhook_manager.get_webhook_stats()
+
+    return {
+        "total_webhooks": sum(stats.values()),
+        "by_event_type": stats
+    }
 
 if __name__ == "__main__":
     import uvicorn
