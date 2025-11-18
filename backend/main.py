@@ -198,10 +198,14 @@ async def run_audit_async(audit_id: str, request: AuditRequest):
 
         # Initialize orchestrator with error handling
         try:
+            print(f"🔧 Initializing orchestrator...")
             orchestrator = GenesisOrchestrator()
+            print(f"✅ Orchestrator initialized successfully")
         except Exception as e:
             error_msg = f"Failed to initialize orchestrator: {str(e)}"
             print(f"❌ {error_msg}")
+            import traceback
+            traceback.print_exc()
             await manager.send_update(audit_id, {
                 "type": "audit_error",
                 "error": error_msg
@@ -243,6 +247,7 @@ async def run_audit_async(audit_id: str, request: AuditRequest):
 
         # Run the actual audit with error handling
         try:
+            print(f"🚀 Running audit: domain={domain_name}, target={request.target_api_name}")
             results = orchestrator.run_complete_audit(
                 domain=domain_name,
                 target_api_name=request.target_api_name,
@@ -251,9 +256,13 @@ async def run_audit_async(audit_id: str, request: AuditRequest):
                     'base_url': request.target_api_url or 'https://api.example.com'
                 }
             )
+            print(f"✅ Audit execution completed successfully")
+            print(f"📊 Results: {results['statistics']}")
         except Exception as e:
             error_msg = f"Audit execution failed: {str(e)}"
             print(f"❌ {error_msg}")
+            import traceback
+            traceback.print_exc()
             await manager.send_update(audit_id, {
                 "type": "audit_error",
                 "error": error_msg
