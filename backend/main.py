@@ -21,12 +21,16 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from src.orchestrator.genesis_orchestrator import GenesisOrchestrator
 from src.memory.qdrant_memory import GenesisMemory
 from src.integrations.webhook_manager import get_webhook_manager
+from src.api.opus_routes import router as opus_router
 
 app = FastAPI(
     title="Genesis Auditor API",
     description="AI-Powered Security Auditing Platform",
     version="1.0.0"
 )
+
+# Include Opus routes
+app.include_router(opus_router)
 
 # Enable CORS for React frontend
 app.add_middleware(

@@ -80,6 +80,7 @@ coverage.xml
 !tailwind.config.ts
 !.env.example
 !vercel.json
+!audit_artifacts/*.json
 
 # Generated Reports (except examples)
 genesis_audit_*.pdf
