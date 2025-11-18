@@ -15,8 +15,8 @@ import os
 from datetime import datetime
 import uuid
 
-# Add parent directory to path to import your existing code
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add current directory to path for imports
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from src.orchestrator.genesis_orchestrator import GenesisOrchestrator
 from src.memory.qdrant_memory import GenesisMemory
