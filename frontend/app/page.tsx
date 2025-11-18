@@ -14,7 +14,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
-      {/* Binary Rain Background */}
+      {/* Binary Rain Background - 1s and 0s only */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-950/20 to-transparent"></div>
         {mounted && [...Array(40)].map((_, i) => (
