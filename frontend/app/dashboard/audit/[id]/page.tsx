@@ -26,6 +26,7 @@ export default function AuditResultsPage({ params }: PageProps) {
 
   useEffect(() => {
     let ws: WebSocket | null = null;
+    let pollInterval: NodeJS.Timeout | null = null;
 
     const fetchInitialStatus = async () => {
       try {
@@ -36,25 +37,56 @@ export default function AuditResultsPage({ params }: PageProps) {
           setProgress(100);
           setLoading(false);
         } else {
-          // Connect to WebSocket for real-time updates
-          ws = api.connectWebSocket(
-            auditId,
-            (message: WebSocketMessage) => {
-              handleWebSocketMessage(message);
-            },
-            (error) => {
-              // Connection issues are normal during handshake
-              console.debug("WebSocket connection issue (normal during initial connect)");
-            },
-            () => {
-              console.log("WebSocket closed");
-            }
-          );
+          // Try WebSocket first, but fall back to polling
+          try {
+            ws = api.connectWebSocket(
+              auditId,
+              (message: WebSocketMessage) => {
+                handleWebSocketMessage(message);
+              },
+              (error) => {
+                console.debug("WebSocket failed, using HTTP polling");
+                startPolling();
+              },
+              () => {
+                console.log("WebSocket closed, using HTTP polling");
+                startPolling();
+              }
+            );
+          } catch (error) {
+            console.log("WebSocket not available, using HTTP polling");
+            startPolling();
+          }
         }
       } catch (error) {
         console.error("Failed to fetch audit status:", error);
         setLoading(false);
       }
+    };
+
+    const startPolling = () => {
+      if (pollInterval) return; // Already polling
+
+      pollInterval = setInterval(async () => {
+        try {
+          const status = await api.getAuditStatus(auditId);
+          setAuditStatus(status);
+
+          if (status.status === "completed" || status.status === "failed") {
+            setProgress(100);
+            setLoading(false);
+            if (pollInterval) {
+              clearInterval(pollInterval);
+              pollInterval = null;
+            }
+          } else {
+            // Simulate progress updates
+            setProgress((prev) => Math.min(prev + 5, 90));
+          }
+        } catch (error) {
+          console.error("Polling error:", error);
+        }
+      }, 2000); // Poll every 2 seconds
     };
 
     const handleWebSocketMessage = (message: WebSocketMessage) => {
@@ -111,6 +143,9 @@ export default function AuditResultsPage({ params }: PageProps) {
     return () => {
       if (ws) {
         ws.close();
+      }
+      if (pollInterval) {
+        clearInterval(pollInterval);
       }
     };
   }, [auditId]);
