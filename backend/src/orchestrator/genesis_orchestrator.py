@@ -16,6 +16,7 @@ from memory.qdrant_memory import GenesisMemory
 from orchestrator.attack_executor import AttackExecutor
 from utils.report_generator import GenesisReportGenerator
 from integrations.webhook_manager import get_webhook_manager
+from integrations.opus_client import get_opus_client
 
 
 class GenesisOrchestrator:
@@ -41,6 +42,13 @@ class GenesisOrchestrator:
 
         print("🔗 Webhook manager initializing...")
         self.webhook_manager = get_webhook_manager()
+
+        print("🎯 Opus client initializing...")
+        self.opus_client = get_opus_client()
+        if self.opus_client:
+            print("✅ Opus integration enabled")
+        else:
+            print("ℹ️  Opus integration disabled (set OPUS_API_KEY to enable)")
 
         print("✅ Genesis Auditor ready")
         print("=" * 60)
@@ -175,6 +183,40 @@ class GenesisOrchestrator:
                 "critical_count": len(critical_vulns),
                 "vulnerabilities": [v.get('attack') for v in critical_vulns]
             })
+
+        # Trigger Opus workflow if enabled
+        if self.opus_client:
+            try:
+                print("\n🎯 Triggering Opus workflow...")
+                opus_response = self.opus_client.trigger_audit_completed_workflow(
+                    domain=domain,
+                    target_api_name=target_api_name,
+                    compliance_score=stats['compliance_score'],
+                    risk_level=analysis.get('risk_level', 'UNKNOWN'),
+                    vulnerabilities_found=vulnerable_count,
+                    duration_seconds=duration,
+                    critical_vulnerabilities=[v.get('attack') for v in critical_vulns] if critical_vulns else []
+                )
+                print(f"✅ Opus job initiated: {opus_response.get('job_id', 'N/A')}")
+
+                # Also trigger critical alert if needed
+                if critical_vulns:
+                    print("🚨 Triggering Opus critical vulnerability alert...")
+                    critical_data = [{
+                        'name': v.get('attack'),
+                        'description': v.get('description', ''),
+                        'severity': 'CRITICAL'
+                    } for v in critical_vulns]
+
+                    opus_alert = self.opus_client.trigger_critical_vulnerability_workflow(
+                        domain=domain,
+                        target_api_name=target_api_name,
+                        critical_vulnerabilities=critical_data
+                    )
+                    print(f"✅ Opus alert job initiated: {opus_alert.get('job_id', 'N/A')}")
+            except Exception as e:
+                print(f"⚠️  Opus workflow trigger failed: {e}")
+                # Don't fail the audit if Opus fails
 
         return self.audit_results
 
