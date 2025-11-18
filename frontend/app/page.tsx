@@ -14,24 +14,9 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
-      {/* Animated Matrix Rain Background */}
+      {/* Gradient Background */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-950/20 to-transparent"></div>
-        {mounted && [...Array(50)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute top-0 text-cyan-500 text-xs font-mono opacity-40 animate-matrix-rain"
-            style={{
-              left: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 5}s`,
-              animationDuration: `${10 + Math.random() * 10}s`,
-            }}
-          >
-            {Array.from({ length: 20 }, () =>
-              String.fromCharCode(0x30A0 + Math.random() * 96)
-            ).join('\n')}
-          </div>
-        ))}
       </div>
 
       {/* Animated Grid */}
