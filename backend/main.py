@@ -199,6 +199,96 @@ async def get_available_domains():
             "name": "Cloud Security",
             "icon": "☁️",
             "description": "Cloud infrastructure and SaaS security"
+        },
+        {
+            "id": "ai_ml",
+            "name": "AI/ML Security",
+            "icon": "🤖",
+            "description": "AI model security and adversarial attacks"
+        },
+        {
+            "id": "llm_security",
+            "name": "LLM Security",
+            "icon": "🧠",
+            "description": "Large Language Model prompt injection and security"
+        },
+        {
+            "id": "zero_trust",
+            "name": "Zero Trust Architecture",
+            "icon": "🎯",
+            "description": "Never trust, always verify security model"
+        },
+        {
+            "id": "devsecops",
+            "name": "DevSecOps",
+            "icon": "⚙️",
+            "description": "Security in CI/CD pipelines"
+        },
+        {
+            "id": "container",
+            "name": "Container Security",
+            "icon": "📦",
+            "description": "Docker, Kubernetes security testing"
+        },
+        {
+            "id": "blockchain",
+            "name": "Blockchain Security",
+            "icon": "⛓️",
+            "description": "Smart contract and DApp security"
+        },
+        {
+            "id": "mobile",
+            "name": "Mobile App Security",
+            "icon": "📱",
+            "description": "iOS and Android application security"
+        },
+        {
+            "id": "web3",
+            "name": "Web3 Security",
+            "icon": "🌐",
+            "description": "Decentralized applications and wallet security"
+        },
+        {
+            "id": "authentication",
+            "name": "Authentication Security",
+            "icon": "🔐",
+            "description": "OAuth, JWT, SSO security testing"
+        },
+        {
+            "id": "data_privacy",
+            "name": "Data Privacy",
+            "icon": "🔏",
+            "description": "Encryption, data leakage, PII protection"
+        },
+        {
+            "id": "network",
+            "name": "Network Security",
+            "icon": "🌍",
+            "description": "Firewall, VPN, network penetration testing"
+        },
+        {
+            "id": "saas",
+            "name": "SaaS Security",
+            "icon": "💼",
+            "description": "Multi-tenant SaaS application security"
+        },
+        {
+            "id": "supply_chain",
+            "name": "Supply Chain Security",
+            "icon": "🔗",
+            "description": "Third-party dependencies and vendors"
+        },
+        {
+            "id": "ransomware",
+            "name": "Ransomware Protection",
+            "icon": "🛑",
+            "description": "Ransomware detection and prevention"
+        },
+        {
+            "id": "phishing",
+            "name": "Phishing Protection",
+            "icon": "🎣",
+            "description": "Email security and social engineering"
         }
     ]
 
