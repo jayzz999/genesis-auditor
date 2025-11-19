@@ -139,6 +139,66 @@ async def get_available_domains():
             "name": "API Security",
             "icon": "🔌",
             "description": "General API security testing"
+        },
+        {
+            "id": "owasp",
+            "name": "OWASP Top 10",
+            "icon": "🛡️",
+            "description": "Web application security risks"
+        },
+        {
+            "id": "soc2",
+            "name": "SOC 2 Compliance",
+            "icon": "📋",
+            "description": "Service organization security controls"
+        },
+        {
+            "id": "iso27001",
+            "name": "ISO 27001",
+            "icon": "🔒",
+            "description": "Information security management"
+        },
+        {
+            "id": "nist",
+            "name": "NIST Framework",
+            "icon": "🏛️",
+            "description": "Cybersecurity framework standards"
+        },
+        {
+            "id": "ccpa",
+            "name": "CCPA Compliance",
+            "icon": "🌉",
+            "description": "California consumer privacy act"
+        },
+        {
+            "id": "ferpa",
+            "name": "FERPA Compliance",
+            "icon": "🎓",
+            "description": "Educational records privacy"
+        },
+        {
+            "id": "fintech",
+            "name": "FinTech Security",
+            "icon": "🏦",
+            "description": "Financial technology and banking APIs"
+        },
+        {
+            "id": "ecommerce",
+            "name": "E-Commerce Security",
+            "icon": "🛒",
+            "description": "Online retail and transaction security"
+        },
+        {
+            "id": "iot",
+            "name": "IoT Security",
+            "icon": "📡",
+            "description": "Internet of Things device security"
+        },
+        {
+            "id": "cloud",
+            "name": "Cloud Security",
+            "icon": "☁️",
+            "description": "Cloud infrastructure and SaaS security"
         }
     ]
 
