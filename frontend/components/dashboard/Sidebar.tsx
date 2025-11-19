@@ -15,7 +15,7 @@ const sidebarItems: SidebarItem[] = [
   { name: "New Audit", href: "/dashboard/new-audit", icon: "🚀" },
   { name: "Audit History", href: "/dashboard/history", icon: "📋" },
   { name: "Memory System", href: "/dashboard/memory", icon: "🧠" },
-  { name: "Opus Monitor", href: "/opus-monitor", icon: "⚡" },
+  { name: "Opus Monitor", href: "/dashboard/opus-monitor", icon: "⚡" },
 ];
 
 export function Sidebar() {
